@@ -1,0 +1,12 @@
+streamlit
+stqdm
+fasttext-wheel
+st-gsheets-connection
+boto3
+pymongo
+xlsxwriter
+altair<5
+langdetect
+Cython
+pycld3
+unidecode
