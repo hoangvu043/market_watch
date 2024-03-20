@@ -18,6 +18,9 @@ pycld3="*"
 unidecode="*"
 requests="*"
 bson="*"
+emoji = "1.7"
+scikit-learn = "*"
+gensim = "*"
 
 [dev-packages]
 
