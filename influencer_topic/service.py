@@ -12,7 +12,7 @@ class InfluencerTopicService:
         if social == "instagram":
             social_url = f"https://www.instagram.com/{username}"
         if social == "youtube":
-            social_url = f"https://www.youtube.com/{username}"
+            social_url = f"https://www.youtube.com/@{username}"
         payload = json.dumps({
             "social_username": username,
             "country_code": "sg",
