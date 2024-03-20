@@ -28,6 +28,7 @@ link_ggsheet = st.sidebar.text_input("Paste link here")
 button_apply = st.sidebar.button("Apply")
 USER_REQUEST_TOPIC = InfluencerTopicUltils._check_user_request('topic')
 st.write('User request hashtag: ' + str(USER_REQUEST_TOPIC))
+st.cache_data.clear()
 if not link_ggsheet:
     st.write("# Please input post link")
 elif button_apply and SOCIAL == "tt":
