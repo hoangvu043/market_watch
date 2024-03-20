@@ -37,6 +37,7 @@ elif button_apply and SOCIAL == "tt":
             st.write('Over Quota! please request after 5 minutes!')
         else:
             conn = st.connection("gsheets", type=GSheetsConnection)
+            conn.set_default(spreadsheet=link_ggsheet)
             users_info = conn.read(worksheet=f"Content List > Creator")
             users = users_info.dropna(axis=0, how='all')
             # users = users.dropna(axis=0, how='all')
@@ -60,6 +61,7 @@ elif button_apply and SOCIAL == "ig":
             st.write('Over Quota! please request after 5 minutes!')
         else:
             conn = st.connection("gsheets", type=GSheetsConnection)
+            conn.set_default(spreadsheet=link_ggsheet)
             users_info = conn.read(worksheet="Content List > Creator")
             users = users_info.dropna(axis=0, how='all')
             # users = users.dropna(axis=0, how='all')
@@ -84,6 +86,7 @@ elif button_apply and SOCIAL == "yt":
             st.write('Over Quota! please request after 5 minutes!')
         else:
             conn = st.connection("gsheets", type=GSheetsConnection)
+            conn.set_default(spreadsheet=link_ggsheet)
             users_info = conn.read(worksheet="Content List > Creator")
             users = users_info.dropna(axis=0, how='all')
             # users = users.dropna(axis=0, how='all')
