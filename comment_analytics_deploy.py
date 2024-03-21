@@ -77,7 +77,7 @@ elif button_apply and SOCIAL == "ig":
     st.write(post_list)
     post_list_ = post_list.Post_link.to_list()
     st.write(post_list_)
-    comment_list = CommentServiceInstagram.run_get_comment_(post_list, max_count=2000)
+    comment_list = CommentServiceInstagram.run_get_comment(post_list, max_count=2000)
     df = pd.DataFrame(comment_list)
     df_drop = df.drop_duplicates(subset="cmt_id", keep="first")
     conn.create(worksheet=SHEET_COMMENT, data=df_drop)
