@@ -114,6 +114,7 @@ elif button_analyze and num_cluster == 0:
     comment_list = comment_list.dropna(axis=1, how='all')
     comment_list = comment_list.dropna(axis=0, how='all')
     df = pd.DataFrame(comment_list)
+    st.write(df)
     df_cluster = CommentServiceAnalyze.cluster(df)
     st.write(df_cluster)
 elif button_analyze and num_cluster != 0:
