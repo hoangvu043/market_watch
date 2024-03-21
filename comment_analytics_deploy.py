@@ -62,8 +62,9 @@ elif button_apply and SOCIAL == "tt":
                 data_full.append(info)
     df = pd.DataFrame(data_full)
     df_drop = df.drop_duplicates(subset="cmt_id", keep="first")
-    conn.update(worksheet=SHEET_COMMENT, data=df_drop, ttl=0)  
+    conn.update(worksheet=SHEET_COMMENT, data=df_drop)  
     st.write("Comment has been collected.")
+    st.cache_data(ttl=0)
 elif button_apply and SOCIAL == "ig":
 
     conn = st.connection("gsheets", type=GSheetsConnection)
