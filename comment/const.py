@@ -12,4 +12,4 @@ class CommentConstant:
                 'Authorization': '406107703174-313l2eakv9um8bgip8a0vut21ql4f3bb.apps.googleusercontent.com',
                 'Accept': 'application/json'
             }
-    api_key_yt = "AIzaSyDnNWDRHkUJOKJdoLplP-nfiXoLVZSUX-A"
+    api_key_yt = "AIzaSyAlrgt3NMkSt6kVooOVZLh1huv5BGQwue8"
