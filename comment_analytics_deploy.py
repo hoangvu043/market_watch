@@ -74,10 +74,9 @@ elif button_apply and SOCIAL == "ig":
     post_list = post_list.dropna(axis=1, how='all')
     post_list = post_list.dropna(axis=0, how='all')
     post_list = pd.DataFrame(post_list)
-    st.write(post_list)
     post_list_ = post_list.Post_link.to_list()
     st.write(post_list_)
-    comment_list = CommentServiceInstagram.run_get_comment(post_list)
+    comment_list = CommentServiceInstagram.run_get_comment_(post_list,max_count=10000)
     df = pd.DataFrame(comment_list)
     df_drop = df.drop_duplicates(subset="cmt_id", keep="first")
     conn.create(worksheet=SHEET_COMMENT, data=df_drop)
@@ -92,7 +91,7 @@ elif button_apply and SOCIAL == "yt":
     post_list_ = post_list.Post_link.to_list()
     st.write(post_list_)
     post_list = pd.DataFrame(post_list)
-    comment_list = CommentServiceYoutube.get_comment_list(post_list)
+    comment_list = CommentServiceYoutube.run_get_comment_list(post_list,max_count=10000)
     comment_full = []
     for comment in comment_list:
         items = comment["items"]
