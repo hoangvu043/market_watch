@@ -92,7 +92,7 @@ elif button_apply and SOCIAL == "yt":
     post_list_ = post_list.Post_link.to_list()
     st.write(post_list_)
     post_list = pd.DataFrame(post_list)
-    comment_list = CommentServiceYoutube.run_get_comment_list(post_list, max_count=2000)
+    comment_list = CommentServiceYoutube.get_comment_list(post_list, max_count=2000)
     comment_full = []
     for comment in comment_list:
         items = comment["items"]
