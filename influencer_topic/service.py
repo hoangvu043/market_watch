@@ -7,7 +7,7 @@ import json
 class InfluencerTopicService:
     def get_topic(username, social, country_code):
         if country_code=="vn":
-            country_code == "vi"
+            country_code = "vi"
         url = "https://1n3e30kq96.execute-api.ap-southeast-1.amazonaws.com/prod/quick-analytics-service/v1"
         if social == "tiktok":
             social_url = f"https://www.tiktok.com/{username}"
