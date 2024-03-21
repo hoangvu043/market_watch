@@ -24,6 +24,8 @@ st.sidebar.image(
 st.sidebar.title("Influencer Topic")
 SOCIAL = st.sidebar.selectbox(
     "Social", ["tt", "ig", "yt"])
+COUNTRY_CODE = st.sidebar.selectbox(
+    "Country", ["sg", "my", "id", "vn", "ph", "th"])
 link_ggsheet = st.sidebar.text_input("Paste link here")
 button_apply = st.sidebar.button("Apply")
 USER_REQUEST_TOPIC = InfluencerTopicUltils._check_user_request('topic')
@@ -43,7 +45,7 @@ elif button_apply and SOCIAL == "tt":
             # users = users.dropna(axis=0, how='all')
             users = pd.DataFrame(users)
             users_ = users.drop_duplicates(subset="Username", keep="first")
-            topics = InfluencerTopicService.run_get_topic(users_, max_count=5000, social="tiktok")
+            topics = InfluencerTopicService.run_get_topic(users_, max_count=5000, social="tiktok", country_code=COUNTRY_CODE)
             for d in topics:
                 for username, topic in d.items():
                     users.loc[users['Username'] == username, 'Influencer Topics'] = topic
@@ -68,7 +70,7 @@ elif button_apply and SOCIAL == "ig":
             users = pd.DataFrame(users)
             users_ = users.drop_duplicates(subset="Username", keep="first")
             st.write(users_)
-            topics = InfluencerTopicService.run_get_topic(users_, max_count=5000, social="instagram")
+            topics = InfluencerTopicService.run_get_topic(users_, max_count=5000, social="instagram",country_code=COUNTRY_CODE)
             for d in topics:
                 for username, topic in d.items():
                     users.loc[users['Username'] == username, 'Influencer Topics'] = topic
@@ -93,7 +95,7 @@ elif button_apply and SOCIAL == "yt":
             users = pd.DataFrame(users)
             users_ = users.drop_duplicates(subset="Username", keep="first")
             st.write(users_)
-            topics = InfluencerTopicService.run_get_topic(users_, max_count=5000, social="youtube")
+            topics = InfluencerTopicService.run_get_topic(users_, max_count=5000, social="youtube",country_code=COUNTRY_CODE)
             for d in topics:
                 for username, topic in d.items():
                     users.loc[users['Username'] == username, 'Influencer Topics'] = topic
