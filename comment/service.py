@@ -171,23 +171,26 @@ class CommentServiceYoutube():
         else:
             return None
     def get_comment_list(post_link):
-        pageToken = ""
-        data_full = []
+        pageToken=""
+        data_full=[]
         video_id = CommentServiceYoutube.extract_video_id(post_link)
         while True:
 
-            url = f"https://youtube.googleapis.com/youtube/v3/commentThreads?part=snippet&maxResults=100&order=time&\
-            pageToken={pageToken}&videoId={video_id}&key={CommentConstant.api_key_yt}"
+            url = f"https://youtube.googleapis.com/youtube/v3/commentThreads?part=snippet&maxResults=100&order=time&pageToken={pageToken}&videoId={video_id}&key={CommentConstant.api_key_yt}"
 
             payload = {}
-            headers = CommentConstant.HEADER_YT
+            headers = {
+            'Authorization': '406107703174-313l2eakv9um8bgip8a0vut21ql4f3bb.apps.googleusercontent.com',
+            'Accept': 'application/json'
+            }
 
             response = requests.request("GET", url, headers=headers, data=payload)
 
-            data = response.json()
+            data=response.json()
+            
             data_full.append(data)
             try:
-                pageToken = data["nextPageToken"]
+                pageToken=data["nextPageToken"]
             except:
                 break
             if 'error' in data.keys():
@@ -195,6 +198,7 @@ class CommentServiceYoutube():
             if 'items' not in data.keys():
                 break
         return data_full
+
 
 
     def run_get_comment_list(df, max_count, display_steps=1000):
