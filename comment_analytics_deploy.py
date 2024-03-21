@@ -62,7 +62,7 @@ elif button_apply and SOCIAL == "tt":
                 data_full.append(info)
     df = pd.DataFrame(data_full)
     df_drop = df.drop_duplicates(subset="cmt_id", keep="first")
-    conn.update(worksheet=SHEET_COMMENT, data=df_drop)
+    conn.update(worksheet=SHEET_COMMENT, data=df_drop, ttl=0)  
     st.write("Comment has been collected.")
 elif button_apply and SOCIAL == "ig":
 
