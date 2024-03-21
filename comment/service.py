@@ -63,8 +63,10 @@ class CommentServiceTikTok():
         else:
             return None
 class CommentServiceInstagram():
-    def extract_post_id(link):
-        match = re.search(r'/p/([^/]+)/', link)
+    def extract_post_id(instagram_link):
+        pattern = r"\/p\/([a-zA-Z0-9_]+)"
+        match = re.search(pattern, instagram_link)
+        
         if match:
             return match.group(1)
         else:
@@ -130,7 +132,7 @@ class CommentServiceInstagram():
             future_to_url = dict()
             cnt = 0
             for _, row in df.iterrows():
-                shortcode = row.get("Post_id")
+                shortcode = row.get("Post_link")
                 if cnt > max_count:
                     break
                 future = executor.submit(CommentServiceInstagram.run_get_comment, shortcode)
@@ -161,8 +163,9 @@ class CommentServiceInstagram():
 
 class CommentServiceYoutube():
     def extract_video_id(youtube_link):
-
-        match = re.search(r'v=([^&/]+)', youtube_link)
+        pattern = r"watch\?v=([a-zA-Z0-9_-]+)"
+        match = re.search(pattern, youtube_link)
+        
         if match:
             return match.group(1)
         else:
