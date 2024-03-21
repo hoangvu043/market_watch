@@ -3,7 +3,7 @@ import re
 from comment.const import CommentConstant
 import time
 import concurrent.futures
-import stqdm
+from stqdm import stqdm
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -130,7 +130,7 @@ class CommentServiceInstagram():
             future_to_url = dict()
             cnt = 0
             for _, row in df.iterrows():
-                shortcode = row.get("Post_id")
+                shortcode = row.get("Post_link")
                 if cnt > max_count:
                     break
                 future = executor.submit(CommentServiceInstagram.run_get_comment, shortcode)
@@ -201,7 +201,7 @@ class CommentServiceYoutube():
             future_to_url = dict()
             cnt = 0
             for _, row in df.iterrows():
-                video_id = row.get("Post_id")
+                video_id = row.get("Post_link")
                 if cnt > max_count:
                     break
                 future = executor.submit(CommentServiceYoutube.get_comment_list, video_id)
