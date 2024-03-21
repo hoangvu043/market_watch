@@ -28,13 +28,14 @@ button_analyze = st.sidebar.button("Analyze")
 num_cluster = int(st.sidebar.text_input("Num Cluster") or 0)
 
 SHEET_COMMENT = "Comment List"
+SHEET_POST_LINK = "Post Link"
 api_key_yt = "AIzaSyDnNWDRHkUJOKJdoLplP-nfiXoLVZSUX-A"
 if not link_ggsheet:
     st.write("# Please input post link")
 elif button_apply and SOCIAL == "tt":
     conn = st.connection("gsheets", type=GSheetsConnection)
     conn.set_default(spreadsheet=link_ggsheet)
-    post_list = conn.read(worksheet=SHEET_COMMENT)
+    post_list = conn.read(worksheet=SHEET_POST_LINK)
     post_list = post_list.dropna(axis=1, how='all')
     post_list = post_list.dropna(axis=0, how='all')
     post_list = pd.DataFrame(post_list)
@@ -62,14 +63,14 @@ elif button_apply and SOCIAL == "tt":
                 data_full.append(info)
     df = pd.DataFrame(data_full)
     df_drop = df.drop_duplicates(subset="cmt_id", keep="first")
-    conn.update(worksheet=SHEET_COMMENT, data=df_drop)  
+    conn.create(worksheet=SHEET_COMMENT, data=df_drop)  
     st.write("Comment has been collected.")
     st.cache_data(ttl=0)
 elif button_apply and SOCIAL == "ig":
 
     conn = st.connection("gsheets", type=GSheetsConnection)
     conn.set_default(spreadsheet=link_ggsheet)
-    post_list = conn.read(worksheet=SHEET_COMMENT)
+    post_list = conn.read(worksheet=SHEET_POST_LINK)
     post_list = post_list.dropna(axis=1, how='all')
     post_list = post_list.dropna(axis=0, how='all')
     post_list = pd.DataFrame(post_list)
@@ -79,13 +80,13 @@ elif button_apply and SOCIAL == "ig":
     comment_list = CommentServiceInstagram.run_get_comment_(post_list, max_count=2000)
     df = pd.DataFrame(comment_list)
     df_drop = df.drop_duplicates(subset="cmt_id", keep="first")
-    conn.update(worksheet=SHEET_COMMENT, data=df_drop)
+    conn.create(worksheet=SHEET_COMMENT, data=df_drop)
     st.write("Comment has been collected.")
 elif button_apply and SOCIAL == "yt":
 
     conn = st.connection("gsheets", type=GSheetsConnection)
     conn.set_default(spreadsheet=link_ggsheet)
-    post_list = conn.read(worksheet=SHEET_COMMENT)
+    post_list = conn.read(worksheet=SHEET_POST_LINK)
     post_list = post_list.dropna(axis=1, how='all')
     post_list = post_list.dropna(axis=0, how='all')
     post_list_ = post_list.Post_link.to_list()
@@ -106,7 +107,7 @@ elif button_apply and SOCIAL == "yt":
             comment_full.append(comment_info)
     df_comment = pd.DataFrame(comment_full)
     # df_drop = df_comment.drop_duplicates(subset="cmt_id", keep="first")
-    conn.update(worksheet=SHEET_COMMENT, data=df_comment)
+    conn.create(worksheet=SHEET_COMMENT, data=df_comment)
     st.write("Comment has been collected.")
 elif button_analyze and num_cluster == 0:
     conn = st.connection("gsheets", type=GSheetsConnection)
