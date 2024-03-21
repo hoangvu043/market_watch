@@ -25,7 +25,7 @@ st.sidebar.title("Influencer Topic")
 SOCIAL = st.sidebar.selectbox(
     "Social", ["tt", "ig", "yt"])
 COUNTRY_CODE = st.sidebar.selectbox(
-    "Country", ["sg", "my", "id", "vn", "ph", "th"])
+    "Country", ["sg", "my", "id", "vn", "th", "ph"])
 link_ggsheet = st.sidebar.text_input("Paste link here")
 button_apply = st.sidebar.button("Apply")
 USER_REQUEST_TOPIC = InfluencerTopicUltils._check_user_request('topic')
