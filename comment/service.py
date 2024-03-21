@@ -204,7 +204,7 @@ class CommentServiceYoutube():
                 video_id = row.get("Post_id")
                 if cnt > max_count:
                     break
-                future = executor.submit(CommentConstant.get_comment_list, video_id)
+                future = executor.submit(CommentServiceYoutube.get_comment_list, video_id)
                 future_to_url[future] = (video_id)
                 cnt += 1
             future_iter = concurrent.futures.as_completed(future_to_url)
