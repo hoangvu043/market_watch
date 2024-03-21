@@ -109,7 +109,7 @@ elif button_apply and SOCIAL == "yt":
     st.write("Comment has been collected.")
 elif button_analyze and num_cluster == 0:
     conn = st.connection("gsheets", type=GSheetsConnection)
-    conn.set_default(spreadsheet=link_ggsheet)
+    # conn.set_default(spreadsheet=link_ggsheet)
     comment_list = conn.read(worksheet=SHEET_COMMENT)
     comment_list = comment_list.dropna(axis=1, how='all')
     comment_list = comment_list.dropna(axis=0, how='all')
@@ -118,7 +118,7 @@ elif button_analyze and num_cluster == 0:
     st.write(df_cluster)
 elif button_analyze and num_cluster != 0:
     conn = st.connection("gsheets", type=GSheetsConnection)
-    conn.set_default(spreadsheet=link_ggsheet)
+    # conn.set_default(spreadsheet=link_ggsheet)
     comment_list = conn.read(worksheet=SHEET_COMMENT)
     comment_list = comment_list.dropna(axis=1, how='all')
     comment_list = comment_list.dropna(axis=0, how='all')
