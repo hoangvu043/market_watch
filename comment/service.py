@@ -130,7 +130,7 @@ class CommentServiceInstagram():
             future_to_url = dict()
             cnt = 0
             for _, row in df.iterrows():
-                shortcode = row.get("Post_link")
+                shortcode = row.get("Post_id")
                 if cnt > max_count:
                     break
                 future = executor.submit(CommentServiceInstagram.run_get_comment, shortcode)
