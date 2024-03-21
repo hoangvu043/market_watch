@@ -5,7 +5,7 @@ from stqdm import stqdm
 import json
 
 class InfluencerTopicService:
-    def get_topic(username, social):
+    def get_topic(username, social, country_code):
         url = "https://1n3e30kq96.execute-api.ap-southeast-1.amazonaws.com/prod/quick-analytics-service/v1"
         if social == "tiktok":
             social_url = f"https://www.tiktok.com/{username}"
@@ -15,7 +15,7 @@ class InfluencerTopicService:
             social_url = f"https://www.youtube.com/@{username}"
         payload = json.dumps({
             "social_username": username,
-            "country_code": "sg",
+            "country_code": country_code,
             "social_url": social_url,
             "source": "brand_research",
         })
@@ -31,7 +31,7 @@ class InfluencerTopicService:
             username: main_category
         }
         return topic
-    def run_get_topic(df, max_count,social=None, display_steps=1000):
+    def run_get_topic(df, max_count,social=None,country_code=None, display_steps=1000):
         tt = time.time()
         user_data = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
@@ -41,7 +41,7 @@ class InfluencerTopicService:
                 username = row.get("Username")
                 if cnt > max_count:
                     break
-                future = executor.submit(InfluencerTopicService.get_topic, username,social)
+                future = executor.submit(InfluencerTopicService.get_topic, username,social,country_code)
                 future_to_url[future] = (username)
                 cnt += 1
             future_iter = concurrent.futures.as_completed(future_to_url)
