@@ -20,7 +20,7 @@ bson="*"
 emoji = "1.7"
 scikit-learn = "*"
 gensim = "*"
-
+scipy= "1.10.1"
 [dev-packages]
 
 [requires]
