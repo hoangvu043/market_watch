@@ -5,7 +5,7 @@ class CommentConstant:
     }
 
     HEADER_IG = {
-            "X-RapidAPI-Key": "e8a30fd0f4msh701c26e71077ec9p19f1b9jsn40ad6b96572a",
+            "X-RapidAPI-Key": "a9de658aa1msha0eec2e239bdf16p1f37d2jsn28e948bef1b1",
             "X-RapidAPI-Host": "instagram243.p.rapidapi.com"
         }
     HEADER_YT = {
