@@ -15,6 +15,13 @@ from sklearn.pipeline import make_pipeline
 from emoji import UNICODE_EMOJI
 from gensim.models.phrases import Phraser
 import string
+from pythainlp import word_tokenize
+import re
+import jieba
+from janome.tokenizer import Tokenizer
+from konlpy.tag import Okt
+from langdetect import detect
+
 class CommentServiceTikTok():
     def get_post_info(post_id):
         url = "https://tiktok-video-no-watermark2.p.rapidapi.com/"
@@ -237,24 +244,63 @@ class CommentServiceYoutube():
                     print(f"{video_id} + {exc}")
         return collect_data
 
+# Function to segment Thai text
+def segment_thai(text):
+    words = word_tokenize(text, engine='newmm')
+    return re.sub(' +', ' ', " ".join(words))
+
+# Function to segment Chinese text
+def segment_chinese(text):
+    return " ".join(list(jieba.cut(text)))
+
+# Function to segment Japanese text
+def segment_japanese(text):
+    tokenizer = Tokenizer()
+    return " ".join([token.surface for token in tokenizer.tokenize(text)])
+
+# Function to segment Korean text
+def segment_korean(text):
+    okt = Okt()
+    return " ".join(okt.morphs(text))
+
+def segment_text(text):
+    try:
+        language = detect(text)
+    except:
+        language = "error"
+
+    if language == 'zh-cn' or language == 'zh-tw':
+        return segment_chinese(text)
+    elif language == 'ja':
+        return segment_japanese(text)
+    elif language == 'ko':
+        return segment_korean(text)
+    elif language == 'th':
+        return segment_thai(text)
+    else:
+        return text
+
 class CommentServiceAnalyze():
-    def cluster(df):
+
+    def cluster(df, eps = 0.5, min_samples = 3):
         string_list = np.array(df.message.dropna().astype(str).apply(lambda x: str(x).lower())).tolist()
 
-        # Sample strings
+        # Add segment text
         strings = list(string_list)
+        segment_strings = [segment_text(string_) for string_ in strings]
 
         # Step 1: Preprocess the data
         # You may want to implement a more sophisticated preprocessing based on your specific requirements.
 
         # Step 2: Calculate TF-IDF
         vectorizer = TfidfVectorizer()
-        tfidf_matrix = vectorizer.fit_transform(strings)
+        tfidf_matrix = vectorizer.fit_transform(segment_strings)
+        if tfidf_matrix.shape[0] > 20000:
+            lsa_model = TruncatedSVD(n_components=50, random_state=42)
+            tfidf_matrix = lsa_model.fit_transform(tfidf_matrix)
 
         # Step 3: Apply DBSCAN clustering
-        eps = 0.5  # @param {type:"raw"}
-        min_samples = 3  # @param
-        dbscan = DBSCAN(metric='cosine', eps=0.5, min_samples=3)
+        dbscan = DBSCAN(metric='cosine', eps=eps, min_samples=min_samples)
         cluster_labels = dbscan.fit_predict(tfidf_matrix)
 
         # Step 4: Organize strings into clusters
@@ -273,33 +319,32 @@ class CommentServiceAnalyze():
                 print(f"Noise Cluster:")
             else:
                 print(f"Cluster {cluster_id + 1}:")
-            for string in strings_in_cluster:
-                print(f"  - {string}")
+            for string_ in strings_in_cluster:
+                print(f"  - {string_}")
                 dict_df['group'].append(f"Noise Cluster:" if cluster_id == -1 else f"Cluster {cluster_id + 1}")
-                dict_df['string'].append(string)
+                dict_df['string'].append(string_)
                 dict_df['num_comment'].append(len(strings_in_cluster))
         df_cluster = pd.DataFrame(dict_df)
         return df_cluster
+
     def common_keyword(df,num_cluster):
         texts = np.array(df.message.apply(lambda x: str(x).lower())).tolist()
-
-        # Load sample data
-        # newsgroups = fetch_20newsgroups(subset='all', remove=('headers', 'footers', 'quotes'))
+        segment_texts = [segment_text(text) for text in texts]
 
         # Create a pipeline with TfidfVectorizer, TruncatedSVD, and KMeans
-        num_clusters = num_cluster  # @param {type:"integer"}
-        # vectorizer = TfidfVectorizer(stop_words='english', max_features=5000)
+        num_clusters = num_cluster
+
         vectorizer = TfidfVectorizer()
-        lsa_model = TruncatedSVD(n_components=int(float(num_clusters)), random_state=42)
+        tfidf_matrix = vectorizer.fit_transform(segment_texts)
+        if tfidf_matrix.shape[0] > 20000:
+            lsa_model = TruncatedSVD(n_components=50, random_state=42)
+            tfidf_matrix = lsa_model.fit_transform(tfidf_matrix)
+
+        # Step 3: Apply DBSCAN clustering
         kmeans_model = KMeans(n_clusters=num_clusters, random_state=42)
 
-        pipeline = make_pipeline(vectorizer, lsa_model, kmeans_model)
-
-        # Fit the pipeline to the data
-        pipeline.fit(texts)
-
         # Assign cluster labels to documents
-        labels = pipeline.predict(texts)
+        labels = kmeans_model.fit_predict(tfidf_matrix)
 
         # Print the cluster labels for each document
         # for i, label in enumerate(labels):
@@ -319,7 +364,7 @@ class CommentServiceAnalyze():
 
         dict_df = {'group': [], 'string': [], 'num_comment': []}
         for text, label in zip(texts, labels):
-            print(f"  - {string}")
+            print(f"  - {text}")
             dict_df['group'].append(f"Cluster {label + 1}")
             dict_df['string'].append(text)
             dict_df['num_comment'].append(group2num_comment[label])
@@ -327,10 +372,9 @@ class CommentServiceAnalyze():
         df_comment = df_cluster.copy(True)  # pd.read_excel(cluster_output_file)
 
         df_comment['string'] = df_comment.string.apply(lambda x: replace_emoji(
-            str(x).lower().replace(",", " ").replace(".", " ").replace("?", " ").replace("!", " ").replace("\\",
-                                                                                                           " ").replace(
-                "/",
-                " ")) if not pd.isna(
+            str(x).lower().replace(",", " ").replace(".", " ").replace("?", 
+                          " ").replace("!", " ").replace("\\", " ").replace("/",
+                " ").replace(":", " ")) if not pd.isna(
             x) else x)
 
         df_word_all = None
@@ -347,11 +391,11 @@ class CommentServiceAnalyze():
 
             sentence_stream = [str(doc).lower().split() for doc in documents]
 
-            bigram = Phrases(sentence_stream, min_count=1, threshold=10, delimiter='_')
+            bigram = Phrases(sentence_stream, min_count=1, threshold=10, delimiter=' ')
 
             bigram_phraser = Phraser(bigram)
 
-            trigram_phraser = Phrases(bigram_phraser[sentence_stream], min_count=1, threshold=50, delimiter='_')
+            trigram_phraser = Phrases(bigram_phraser[sentence_stream], min_count=1, threshold=50, delimiter=' ')
 
             vocab = dict()
 
@@ -363,9 +407,25 @@ class CommentServiceAnalyze():
                 for token in sent + tokens_ + tokens__:
                     vocab[token] = 0
 
+            # Add segment text
+            sentence_stream_token = [segment_text(str(doc)).lower().split() for doc in documents]
+
+            bigram_token = Phrases(sentence_stream_token, min_count=1, threshold=10, delimiter=' ')
+            bigram_phraser_token = Phraser(bigram_token)
+            trigram_phraser_token = Phrases(bigram_phraser_token[sentence_stream_token], min_count=1, threshold=50, delimiter=' ')
+
+            for sent in sentence_stream_token:
+                tokens_ = bigram_phraser[sent]
+                tokens__ = trigram_phraser[tokens_]
+
+                # print(sent, tokens_, tokens__)
+                for token in sent + tokens_ + tokens__:
+                    vocab[token] = 0
+                    vocab[token.replace(" ", "")] = 0
+
             for word in vocab.keys():
                 count = df_comment.string.apply(
-                    lambda x: word in str(x).lower() or word.replace("_", " ") in str(x).replace("_",
+                    lambda x: word in str(x).lower() or word.replace(" ", " ") in str(x).replace(" ",
                                                                                                  " ").lower()).sum()
                 vocab[word] = count
 
@@ -378,7 +438,7 @@ class CommentServiceAnalyze():
                     data['word'].append(key)
                     data['count'].append(vocab[key])
                     data['num_charater'].append(len(key))
-                    data['num_word'].append(np.array([x == '_' for x in key]).sum() + 1)
+                    data['num_word'].append(np.array([x == ' ' for x in key]).sum() + 1)
 
             df_word = pd.DataFrame(data)
             df_word['group'] = group
