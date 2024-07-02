@@ -10,3 +10,9 @@ langdetect
 Cython
 pycld3
 unidecode
+emoji==1.7.0
+pythainlp==5.0.4
+langdetect==1.0.9
+jieba==1.5.0
+janome==0.5.0
+konlpy==0.6.0
