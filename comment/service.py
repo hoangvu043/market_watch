@@ -259,9 +259,9 @@ def segment_japanese(text):
     return " ".join([token.surface for token in tokenizer.tokenize(text)])
 
 # Function to segment Korean text
-def segment_korean(text):
-    okt = Okt()
-    return " ".join(okt.morphs(text))
+# def segment_korean(text):
+#     okt = Okt()
+#     return " ".join(okt.morphs(text))
 
 def segment_text(text):
     try:
