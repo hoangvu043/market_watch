@@ -91,10 +91,10 @@ class CommentServiceInstagram():
 
     def get_comment(shortcode):
         cursor = "%7Bend_cursor%7D"
-        scraperid = "%7Bscraperid%7D"
+        # scraperid = "%7Bscraperid%7D"
         data_full = []
         while True:
-            url = f"https://instagram243.p.rapidapi.com/postcomments/{shortcode}/{cursor}/{scraperid}"
+            url = f"https://instagram243.p.rapidapi.com/postcomments/{shortcode}/{cursor}"
             headers = CommentConstant.HEADER_IG
 
             response = requests.get(url, headers=headers)
