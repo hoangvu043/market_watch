@@ -273,8 +273,8 @@ def segment_text(text):
         return segment_chinese(text)
     elif language == 'ja':
         return segment_japanese(text)
-    elif language == 'ko':
-        return segment_korean(text)
+    # elif language == 'ko':
+    #     return segment_korean(text)
     elif language == 'th':
         return segment_thai(text)
     else:
