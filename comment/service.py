@@ -329,7 +329,13 @@ class CommentServiceAnalyze():
 
     def common_keyword(df,num_cluster):
         texts = np.array(df.message.apply(lambda x: str(x).lower())).tolist()
-        segment_texts = [segment_text(text) for text in texts]
+        # segment_texts = [segment_text(text) for text in texts]
+        segment_texts = []
+        for text in texts:
+            try:
+              segment_texts .append(segment_text(text))
+            except:
+              segment_texts .append(text)
 
         # Create a pipeline with TfidfVectorizer, TruncatedSVD, and KMeans
         num_clusters = num_cluster
