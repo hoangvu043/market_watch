@@ -101,21 +101,21 @@ class CommentServiceInstagram():
 
             data = response.json()
             try:
-                cursor = data["data"]['end_cursor']
+                cursor = data["data"]['next_min_id']
                 # scraperid = data["scraperid"]
                 data_full.append(data)
                 # print(cursor)
             except:
                 return data_full
-            if data["data"]["next_page"] != True:
+            if data["data"]["has_more_comments"] != True:
                 break
         return data_full
 
 
     def run_get_comment(post_link):
         shortcode = CommentServiceInstagram.extract_post_id(post_link)
-        caption = CommentServiceInstagram.get_post_detail(shortcode)["data"]["caption"]["text"]
-        post_id = CommentServiceInstagram.get_post_detail(shortcode)["data"]["code"]
+        caption = CommentServiceInstagram.get_post_detail(shortcode)["data"]["edge_media_to_caption"]["edges"][0]["node"]["text"]
+        post_id = CommentServiceInstagram.get_post_detail(shortcode)["data"]["shortcode"]
         comments = CommentServiceInstagram.get_comment(shortcode)
         data_full = [
             {
