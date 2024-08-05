@@ -22,6 +22,14 @@ from janome.tokenizer import Tokenizer
 from konlpy.tag import Okt
 from langdetect import detect
 
+import concurrent.futures
+import threading
+import requests
+import os
+from openai import OpenAI #openai need to update frequently because we can't request with outdated api
+from datetime import datetime
+import tiktoken #tiktoken need to update frequently because we can't request with outdated api
+
 class CommentServiceTikTok():
     def get_post_info(post_id):
         url = "https://tiktok-video-no-watermark2.p.rapidapi.com/"
@@ -451,3 +459,225 @@ class CommentServiceAnalyze():
 
             df_word_all = df_word if df_word_all is None else pd.concat((df_word_all, df_word))
         return df_cluster, df_word_all
+    
+    def count_openai_token(texts, model_name = "text-embedding-3-small"):
+        '''
+            this function return number token in texts (list of string). 
+            If texts is only 1 string, convert texts to list [texts].
+            Note that: texts need contain string or list of string, float or nan will yeild error!
+
+            input:
+                texts: string or list of strings
+                model_name: openai embedding model name, openai will update it, please check at https://openai.com/api/pricing/
+                    text-embedding-3-small
+                    text-embedding-3-large
+                    ada v2
+            output:
+                number token in texts
+        '''
+        if not isinstance(texts, list):
+            texts = [texts]
+        encoding = tiktoken.encoding_for_model(model_name)
+
+        token_counts = []
+        for text in texts:
+            token_count = len(encoding.encode(text))
+            token_counts.append(token_count)
+        return np.array(token_counts).sum()
+    
+    def openai_embedding_cluster(df, eps = 0.5, min_samples = 3):
+        string_list = np.array(df.message.dropna().astype(str).apply(lambda x: str(x).lower())).tolist()
+
+        # Step 1: Request openai embedding. Don't forget check number of token before requests (it is money $)
+        embeddings = get_openai_embedding(string_list)
+
+        # Step 3: Apply DBSCAN clustering
+        dbscan = DBSCAN(metric='cosine', eps=eps, min_samples=min_samples)
+        cluster_labels = dbscan.fit_predict(embeddings)
+
+        # Step 4: Organize strings into clusters
+        clustered_strings = {}
+        for i, cluster_id in enumerate(cluster_labels):
+            if cluster_id not in clustered_strings:
+                clustered_strings[cluster_id] = [string_list[i]]
+            else:
+                clustered_strings[cluster_id].append(string_list[i])
+
+        # Step 5: Print the clustered strings
+        dict_df = {'group': [], 'string': [], 'num_comment': []}
+        print("Clustered Strings:")
+        for cluster_id, strings_in_cluster in clustered_strings.items():
+            if cluster_id == -1:
+                print(f"Noise Cluster:")
+            else:
+                print(f"Cluster {cluster_id + 1}:")
+            for string_ in strings_in_cluster:
+                print(f"  - {string_}")
+                dict_df['group'].append(f"Noise Cluster:" if cluster_id == -1 else f"Cluster {cluster_id + 1}")
+                dict_df['string'].append(string_)
+                dict_df['num_comment'].append(len(strings_in_cluster))
+        df_cluster = pd.DataFrame(dict_df)
+        return df_cluster
+
+    def openai_embedding_common_keyword(df,num_cluster):
+        texts = np.array(df.message.apply(lambda x: str(x).lower())).tolist()
+        # segment_texts = [segment_text(text) for text in texts]
+        segment_texts = []
+        for text in texts:
+            try:
+              segment_texts .append(segment_text(text))
+            except:
+              segment_texts .append(text)
+
+        # Create a pipeline with TfidfVectorizer, TruncatedSVD, and KMeans
+        num_clusters = num_cluster
+
+        embeddings = get_openai_embedding(texts)
+        if embeddings.shape[0] > 20000:
+            lsa_model = TruncatedSVD(n_components=50, random_state=42)
+            embeddings = lsa_model.fit_transform(embeddings)
+
+        # Step 3: Apply DBSCAN clustering
+        kmeans_model = KMeans(n_clusters=num_clusters, random_state=42)
+
+        # Assign cluster labels to documents
+        labels = kmeans_model.fit_predict(embeddings)
+
+        # Print the cluster labels for each document
+        # for i, label in enumerate(labels):
+        #     print(f"Document {i+1}: Cluster {label + 1}")
+
+        group2num_comment = dict()
+        for label_ in set(labels):
+            group2num_comment[label_] = (np.array(labels) == label_).sum()
+
+        def replace_emoji(s):
+            count = 0
+            for emoji in UNICODE_EMOJI['en']:
+                s = s.replace(emoji, "")
+            exclude = set(string.punctuation)
+            s = ''.join(ch for ch in s if ch not in exclude)
+            return s
+
+        dict_df = {'group': [], 'string': [], 'num_comment': []}
+        for text, label in zip(texts, labels):
+            print(f"  - {text}")
+            dict_df['group'].append(f"Cluster {label + 1}")
+            dict_df['string'].append(text)
+            dict_df['num_comment'].append(group2num_comment[label])
+        df_cluster = pd.DataFrame(dict_df)
+        df_comment = df_cluster.copy(True)  # pd.read_excel(cluster_output_file)
+
+        df_comment['string'] = df_comment.string.apply(lambda x: replace_emoji(
+            str(x).lower().replace(",", " ").replace(".", " ").replace("?", 
+                          " ").replace("!", " ").replace("\\", " ").replace("/",
+                " ").replace(":", " ")) if not pd.isna(
+            x) else x)
+
+        df_word_all = None
+
+        for group in set(np.array(df_comment.group).tolist()):
+
+            df_ = df_comment[df_comment.group == group]
+
+            string_list = np.array(df_.string.dropna().astype(str).apply(lambda x: str(x).lower())).tolist()
+
+            print(group, len(df_), len(string_list))
+
+            documents = string_list
+
+            sentence_stream = [str(doc).lower().split() for doc in documents]
+
+            bigram = Phrases(sentence_stream, min_count=1, threshold=10, delimiter=' ')
+
+            bigram_phraser = Phraser(bigram)
+
+            trigram_phraser = Phrases(bigram_phraser[sentence_stream], min_count=1, threshold=50, delimiter=' ')
+
+            vocab = dict()
+
+            for sent in sentence_stream:
+                tokens_ = bigram_phraser[sent]
+                tokens__ = trigram_phraser[tokens_]
+
+                # print(sent, tokens_, tokens__)
+                for token in sent + tokens_ + tokens__:
+                    vocab[token] = 0
+
+            # Add segment text
+            sentence_stream_token = [segment_text(str(doc)).lower().split() for doc in documents]
+
+            bigram_token = Phrases(sentence_stream_token, min_count=1, threshold=10, delimiter=' ')
+            bigram_phraser_token = Phraser(bigram_token)
+            trigram_phraser_token = Phrases(bigram_phraser_token[sentence_stream_token], min_count=1, threshold=50, delimiter=' ')
+
+            for sent in sentence_stream_token:
+                tokens_ = bigram_phraser[sent]
+                tokens__ = trigram_phraser[tokens_]
+
+                # print(sent, tokens_, tokens__)
+                for token in sent + tokens_ + tokens__:
+                    vocab[token] = 0
+                    vocab[token.replace(" ", "")] = 0
+
+            for word in vocab.keys():
+                count = df_comment.string.apply(
+                    lambda x: word in str(x).lower() or word.replace(" ", " ") in str(x).replace(" ",
+                                                                                                 " ").lower()).sum()
+                vocab[word] = count
+
+            sorted_keys = sorted(vocab, key=lambda x: vocab[x])
+            data = {'word': [], 'count': [], 'num_word': [], 'num_charater': []}
+
+            for key in sorted_keys:
+                # if vocab[key] > 10 and len(key) > 2:
+                if vocab[key] > 0:
+                    data['word'].append(key)
+                    data['count'].append(vocab[key])
+                    data['num_charater'].append(len(key))
+                    data['num_word'].append(np.array([x == ' ' for x in key]).sum() + 1)
+
+            df_word = pd.DataFrame(data)
+            df_word['group'] = group
+
+            df_word_all = df_word if df_word_all is None else pd.concat((df_word_all, df_word))
+        return df_cluster, df_word_all
+
+def request_openai_embedding(text):
+    with SEMA:
+        response = CLIENT.embeddings.create(
+            input=text,
+            model="text-embedding-3-small"
+        )
+
+        return np.array(response.data[0].embedding)
+    
+def get_openai_embedding(texts):
+
+    start = datetime.now()
+
+    responses = []
+
+    for batch_id in range(len(texts)//1000 + (len(texts)%1000!=0)):
+        start_id = batch_id * 1000
+        end_id = min((batch_id+1) * 1000, len(texts))
+        request_messages_ = texts[start_id:end_id]
+        print(start_id, end_id, len(request_messages_))
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            results = executor.map(request_openai_embedding, texts)
+
+        for result in results:
+            #print(result.json())
+            responses.append(result)
+        print(len(responses), datetime.now() - start)
+        #time.sleep(60)
+
+    print(datetime.now() - start)
+
+    responses = np.stack(responses, 0)
+    return responses
+
+API_KEY = "YOUR TOKEN HERE"
+REQ_PER_SEC = 64
+SEMA = threading.Semaphore(REQ_PER_SEC)
+CLIENT = OpenAI(api_key = API_KEY)
